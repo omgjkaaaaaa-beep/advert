@@ -3,12 +3,17 @@ const palette={mint:'#abb095',violet:'#8d8291',orange:'#c3aa55',blue:'#879ea0',p
 let ads=[], selected=null, color='orange', ready=false;
 const demo=location.hostname.endsWith('github.io') || location.protocol==='file:';
 $('mode').hidden=!demo;
-const road=cell=>[7,8,18].includes(cell%20)||[4,12].includes(Math.floor(cell/20));
-const address=cell=>`УЧАСТОК №${String(cell+1).padStart(3,'0')} / КВАРТАЛ ${Math.floor(cell/20)+1}`;
-for(let i=0;i<400;i++){
- const el=document.createElement(road(i)?'div':'button'); el.className='cell'+(road(i)?' road':'')+([4,12].includes(Math.floor(i/20))?' horizontal':'');
- if(!road(i)){el.dataset.cell=i;el.setAttribute('aria-label',`Свободный участок ${i+1}`);el.addEventListener('click',()=>openCell(i));}
+const world=CityWorld;
+const address=cell=>`УЧАСТОК №${String(cell+1).padStart(4,'0')} / РЕЕСТР ЗЕМЕЛЬ`;
+for(const c of world.cells){
+ const el=document.createElement(c.road||c.place?'div':'button');el.className='cell'+(c.road?' road':'')+(c.place?' scenery-cell':'');
+ if(!c.road&&!c.place){el.dataset.cell=c.id;el.setAttribute('aria-label',`Свободный участок ${c.id+1}`);el.addEventListener('click',()=>openCell(c.id));}
  $('cells').append(el);
+}
+for(const p of world.landmarks){
+ const button=document.createElement('button');button.className='landmark-label';button.textContent=p.name;button.style.left=(28+p.x*100)+'px';button.style.top=(28+(p.y+p.h)*100-28)+'px';
+ button.onclick=()=>{$('formView').hidden=true;$('adView').hidden=false;$('adAddress').textContent='ДОСТОПРИМЕЧАТЕЛЬНОСТЬ / СТАРЫЙ РАЙОН';$('adName').textContent=p.name;$('adText').textContent=p.story;$('adLink').hidden=true;$('dialog').showModal();};$('map').append(button);
+ const jump=document.createElement('button');jump.textContent=p.name;jump.onclick=()=>{scale=viewport.clientWidth<600?.65:.85;x=viewport.clientWidth/2-(28+(p.x+p.w/2)*100)*scale;y=viewport.clientHeight/2-(28+(p.y+p.h/2)*100)*scale;apply();};$('locations').append(jump);
 }
 for(const [key,value] of Object.entries(palette)){
  const button=document.createElement('button');button.type='button';button.style.background=value;button.setAttribute('aria-label',({mint:'Оливковый',violet:'Сиреневый',orange:'Золотистый',blue:'Серо-голубой',pink:'Терракотовый'})[key]);
@@ -20,7 +25,7 @@ function render(){
  el.setAttribute('aria-label',ad?`${ad.name}, занятый участок`:`Свободный участок ${Number(el.dataset.cell)+1}`);
  if(ad){const icon=document.createElement('span');icon.className='cell-icon';icon.textContent='★';const name=document.createElement('span');name.className='cell-name';name.textContent=ad.name;el.append(icon,name);el.title=ad.name;}
  }
- $('count').textContent=ads.length;$('available').textContent=306-ads.length;
+ $('count').textContent=ads.length;$('available').textContent=world.available.size-ads.length;
 }
 async function refresh(){try{if(demo){ads=JSON.parse(localStorage.getItem('kvartal-demo-ads')||'[]');ready=true;render();return;}const response=await fetch('/api/ads');if(!response.ok)throw Error();ads=await response.json();ready=true;render();$('status').textContent='';}catch{$('status').textContent='Не удалось загрузить город. Проверьте соединение и обновите страницу.';}}
 function openCell(cell){
@@ -39,8 +44,8 @@ $('form').addEventListener('submit',async event=>{
  finally{$('submit').disabled=false;}
 });
 let scale=.85,x=0,y=0;const viewport=$('viewport');
-function apply(){const minX=Math.min(0,viewport.clientWidth-1036*scale),minY=Math.min(0,viewport.clientHeight-1036*scale);x=Math.max(minX-40,Math.min(40,x));y=Math.max(minY-40,Math.min(40,y));$('map').style.transform=`translate(${x}px,${y}px) scale(${scale})`;}
-function reset(){scale=viewport.clientWidth<600?.72:.95;x=(viewport.clientWidth-1036*scale)/2;y=-50;apply();}
+function apply(){const minX=Math.min(0,viewport.clientWidth-4056*scale),minY=Math.min(0,viewport.clientHeight-4056*scale);x=Math.max(minX-40,Math.min(40,x));y=Math.max(minY-40,Math.min(40,y));$('map').style.transform=`translate(${x}px,${y}px) scale(${scale})`;}
+function reset(){scale=viewport.clientWidth<600?.45:.65;x=viewport.clientWidth/2-2580*scale;y=viewport.clientHeight/2-2680*scale;apply();}
 function zoom(delta){const next=Math.max(.45,Math.min(1.8,scale+delta));const cx=viewport.clientWidth/2,cy=viewport.clientHeight/2;x=cx-(cx-x)*next/scale;y=cy-(cy-y)*next/scale;scale=next;apply();}
 $('plus').onclick=()=>zoom(.15);$('minus').onclick=()=>zoom(-.15);$('reset').onclick=reset;
 let drag=null,suppress=false;

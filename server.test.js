@@ -19,6 +19,12 @@ test('shared city: persistence, validation and conflicting claims',async()=>{
  assert.equal((await post({...ad,cell:7})).status,400);
  assert.equal((await post({...ad,cell:1,name:' '})).status,400);
  assert.equal((await post(null)).status,400);
+ const world=require('./public/world');
+ assert.equal(new Set(world.cells.map(c=>c.id)).size,1600);
+ const scenic=world.cells.find(c=>c.place);assert.equal((await post({...ad,cell:scenic.id})).status,400);
+ const expansion=world.cells.find(c=>c.id>=400&&world.available.has(c.id));assert.equal((await post({...ad,cell:expansion.id})).status,201);
+ assert.equal((await fetch(base+'/world.js')).status,200);
+ assert.equal((await fetch(base+'/scene.js')).status,200);
  assert.equal((await fetch(base+'/missing')).status,404);
  }finally{await new Promise(r=>server.close(r));await fs.rm(dir,{recursive:true,force:true});}
 });
