@@ -2,7 +2,13 @@
  const canvas=document.getElementById('scenery'),ctx=canvas.getContext('2d');const extent=CityWorld.size*25;canvas.width=canvas.height=extent;canvas.style.width=canvas.style.height=CityWorld.size*100+'px';document.getElementById('life').style.width=document.getElementById('life').style.height=CityWorld.size*100+'px';ctx.imageSmoothingEnabled=false;
  const rect=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);};
  let seed=19;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
- for(const c of CityWorld.cells){const x=c.x*25,y=c.y*25;rect(x,y,25,25,c.road?'#514d45':c.place?'#756c51':'#72745a');for(let n=0;n<12;n++)rect(x+rnd()*24,y+rnd()*24,1+rnd()*2,1,c.road?'#403f3b':rnd()>.5?'#8b8462':'#5e634b');if(c.road){if([4,12,28,36,44,52].includes(c.y))rect(x+7,y+12,9,1,'#b5a77c');else rect(x+12,y+7,1,9,'#b5a77c');if(rnd()>.7){rect(x+3,y+6,7,3,'#373d3c');rect(x+4,y+6,4,1,'#637575');}}}
+ for(const c of CityWorld.cells){const x=c.x*25,y=c.y*25;rect(x,y,25,25,c.road?'#514d45':c.place?'#756c51':'#72745a');for(let n=0;n<12;n++)rect(x+rnd()*24,y+rnd()*24,1+rnd()*2,1,c.road?'#403f3b':rnd()>.5?'#8b8462':'#5e634b');if(c.road){if([4,12,28,36,44,52].includes(c.y))rect(x+7,y+12,9,1,'#b5a77c');else rect(x+12,y+7,1,9,'#b5a77c');}}
+
+ const mobility=createCityMobility(CityWorld);
+ for(const c of CityWorld.cells.filter(c=>c.road&&!c.place)){const x=c.x*25,y=c.y*25,v=mobility.vertical(c.x),h=mobility.horizontal(c.y);
+ if(v&&!h){rect(x,y,3,25,'#93907a');rect(x+22,y,3,25,'#93907a');if(mobility.crossingY(c.y))for(let i=0;i<5;i++)rect(x+4+i*4,y+9,2,7,'#d4c7a4');}
+ if(h&&!v){rect(x,y,25,3,'#93907a');rect(x,y+22,25,3,'#93907a');if(mobility.crossingX(c.x))for(let i=0;i<5;i++)rect(x+9,y+4+i*4,7,2,'#d4c7a4');}
+ }
  function rust(x,y,w,h){for(let i=0;i<35;i++){const px=x+rnd()*w,py=y+rnd()*h;rect(px,py,2,1+rnd()*5,'#83543b');}}
  function building(x,y,w,h,color){rect(x+4,y+5,w,h,'#37382e');rect(x,y,w,h,color);rect(x,y,w,4,'#9b977b');rect(x,y+h-5,w,5,'#514e41');rust(x,y,w,h);}
  function windows(x,y,cols,rows){for(let a=0;a<cols;a++)for(let b=0;b<rows;b++){rect(x+a*13,y+b*12,6,7,'#343f3b');rect(x+a*13,y+b*12,6,1,'#9b9e82');if(rnd()>.65)rect(x+a*13+1,y+b*12+1,3,4,'#c6ac66');}}

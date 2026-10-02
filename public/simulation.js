@@ -1,9 +1,11 @@
 (function(root){
  function createSimulation(world,{seed=71,count=96,initialState=null}={}){
+ const mobilityFactory=typeof module!=='undefined'?require('./mobility').createMobility:root.createCityMobility;
+ const mobility=mobilityFactory(world);
  const servicesFactory=typeof module!=='undefined'?require('./services').createServices:root.createCityServices;
  const animalFactory=typeof module!=='undefined'?require('./animals').createAnimals:root.createCityAnimals;
  const size=world.size,extent=size*25;
- let time=0,nextDelivery=80,nextRent=720,nextPressure=30;const log=[],events={walk:0,talk:0,fight:0,buy:0,work:0,rest:0,argue:0,reconcile:0,eat:0,sleep:0,service:0};
+ let time=0,nextDelivery=80,nextRent=720,nextPressure=30;const log=[],events={walk:0,talk:0,fight:0,buy:0,work:0,rest:0,argue:0,reconcile:0,eat:0,sleep:0,service:0,injured:0};
  const random=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
  const pick=list=>list[Math.floor(random()*list.length)];
  const weather=()=>['пасмурно','дождь','ясно','ветер'][Math.floor(time/180)%4];
@@ -22,12 +24,13 @@
  const roles=['слесарь','библиотекарь','механик','продавец','дворник','пенсионер','рабочий','почтальон'];
  const colors=['#778c81','#a2775d','#83718a','#a39266','#596f81','#9f6e69'];
  const agents=Array.from({length:count},(_,i)=>{const family=families[Math.floor(i/4)],p=i<12?family.home:places[i%places.length];const a={id:i,name:names[i%names.length]+' '+family.name.replace(/ы$/,'')+(i%2?'а':''),role:roles[i%roles.length],color:colors[i%colors.length],x:p.door[0]*25+10+random()*4,y:p.door[1]*25+10+random()*4,state:'rest',until:2+random()*8,cooldown:0,path:[],home:family.home,workplace:workplaces[i%workplaces.length],familyId:family.id,goal:p,bag:false,money:20,hunger:15+random()*35,energy:65+random()*30,social:35+random()*40,mood:random(),speed:12+random()*9,bubble:'',bubbleUntil:0,dialogue:[],wages:0};family.members.push(i);return a;});
- const services=servicesFactory(world,{places,note,initialState:initialState?.services});
+ for(const a of agents){const point=mobility.snap(a);a.x=point.x;a.y=point.y;a.mobilityVersion=1;a.reckless=false;a.health=100;}
+ const services=servicesFactory(world,{places,note,mobility,initialState:initialState?.services});
  const wildlife=animalFactory(world,{places,route,nearest,seed:903,initialState:initialState?.wildlife});
  function note(text,a,type='life'){log.unshift({time,text,x:a?.x,y:a?.y,type});if(log.length>30)log.pop();}
  function speak(a,text){a.bubble=text;a.bubbleUntil=time+7;note(a.name+': «'+text+'»',a,'speech');}
  function setState(a,state,duration){a.state=state;a.until=time+duration;a.dialogue=[];events[state]++;}
- function go(a,goal){a.goal=goal;a.path=route(a,goal);setState(a,'walk',0);}
+ function go(a,goal){a.goal=goal;a.reckless=random()<.06;a.path=mobility.route(a,goal,a.reckless);setState(a,'walk',0);}
  function choose(a){const f=families[a.familyId],hour=(8+time/30)%24;let goal;
  if(a.bag||a.energy<24||hour>=22||hour<6)goal=a.home;
  else if(a.hunger>68&&f.pantry>0)goal=a.home;
@@ -74,10 +77,10 @@
  if(time>=nextPressure){for(const f of families)f.tension=Math.max(0,Math.min(100,f.tension+(f.pantry===0?5:-1)+(f.money<20?5:0)));nextPressure+=30;}
  for(const a of agents){a.hunger=Math.min(100,a.hunger+dt*.14);a.energy=Math.max(0,a.energy-dt*.055);a.social=Math.max(0,a.social-dt*.07);
  while(a.dialogue.length&&a.dialogue[0].at<=time)speak(a,a.dialogue.shift().text);
- if(a.state==='walk'){let remaining=a.speed*dt*(weather()==='дождь'?.8:1);while(a.path.length&&remaining>0){const p=a.path[0],dx=p.x-a.x,dy=p.y-a.y,d=Math.hypot(dx,dy);if(d<=remaining){a.x=p.x;a.y=p.y;remaining-=d;a.path.shift();}else{a.x+=dx/d*remaining;a.y+=dy/d*remaining;remaining=0;}}if(!a.path.length)arrive(a);}else if(time>=a.until)finish(a);
+ if(a.state==='walk'){let remaining=a.speed*dt*(weather()==='дождь'?.8:1);while(a.path.length&&remaining>0){const p=a.path[0],dx=p.x-a.x,dy=p.y-a.y,d=Math.hypot(dx,dy);if(d<=remaining){a.x=p.x;a.y=p.y;remaining-=d;a.path.shift();}else{a.x+=dx/d*remaining;a.y+=dy/d*remaining;remaining=0;}}if(!a.path.length)arrive(a);}else if(a.state!=='injured'&&time>=a.until)finish(a);
  }
- for(const f of families){if(time<f.nextMeeting)continue;const eligible=f.members.map(id=>agents[id]).filter(a=>time>=a.cooldown&&!['fight','argue','talk','reconcile','buy','work'].includes(a.state));let found=false;for(let i=0;i<eligible.length&&!found;i++)for(let j=i+1;j<eligible.length;j++)if(Math.hypot(eligible[i].x-eligible[j].x,eligible[i].y-eligible[j].y)<20){const a=eligible[i],b=eligible[j],pair=[a.id,b.id].sort((x,y)=>x-y).join(':');conversation(a,b,relationships.get(pair)==='strained'?'reconcile':f.tension>40?'argue':'talk');f.nextMeeting=time+75;found=true;break;}}
- for(let i=0;i<agents.length;i++){const a=agents[i];if(a.state!=='walk'||time<a.cooldown)continue;for(let j=i+1;j<agents.length;j++){const b=agents[j];if(b.state!=='walk'||time<b.cooldown||Math.hypot(a.x-b.x,a.y-b.y)>10)continue;const pair=[a.id,b.id].sort((x,y)=>x-y).join(':'),f=families[a.familyId];const chance=random();conversation(a,b,relationships.get(pair)==='strained'?'reconcile':chance<.10?'fight':chance<.26||a.familyId===b.familyId&&f.tension>40?'argue':'talk');break;}}
+ for(const f of families){if(time<f.nextMeeting)continue;const eligible=f.members.map(id=>agents[id]).filter(a=>time>=a.cooldown&&!['fight','argue','talk','reconcile','buy','work','injured'].includes(a.state));let found=false;for(let i=0;i<eligible.length&&!found;i++)for(let j=i+1;j<eligible.length;j++)if(!(mobility.onRoad(eligible[i])&&mobility.isCrosswalk(eligible[i]))&&!(mobility.onRoad(eligible[j])&&mobility.isCrosswalk(eligible[j]))&&Math.hypot(eligible[i].x-eligible[j].x,eligible[i].y-eligible[j].y)<20){const a=eligible[i],b=eligible[j],pair=[a.id,b.id].sort((x,y)=>x-y).join(':');conversation(a,b,relationships.get(pair)==='strained'?'reconcile':f.tension>40?'argue':'talk');f.nextMeeting=time+75;found=true;break;}}
+ for(let i=0;i<agents.length;i++){const a=agents[i];if(a.state!=='walk'||time<a.cooldown||mobility.onRoad(a)&&mobility.isCrosswalk(a))continue;for(let j=i+1;j<agents.length;j++){const b=agents[j];if(b.state!=='walk'||time<b.cooldown||mobility.onRoad(b)&&mobility.isCrosswalk(b)||Math.hypot(a.x-b.x,a.y-b.y)>10)continue;const pair=[a.id,b.id].sort((x,y)=>x-y).join(':'),f=families[a.familyId];const chance=random();conversation(a,b,relationships.get(pair)==='strained'?'reconcile':chance<.10?'fight':chance<.26||a.familyId===b.familyId&&f.tension>40?'argue':'talk');break;}}
  }
 
  function snapshot(){return JSON.parse(JSON.stringify({version:2,size,seed,time,nextDelivery,nextRent,nextPressure,events,log,wildlife:wildlife.snapshot(),services:services.snapshot(),families:families.map(f=>({id:f.id,money:f.money,pantry:f.pantry,tension:f.tension,nextMeeting:f.nextMeeting})),stocks:[...stocks],relationships:[...relationships],agents:agents.map(a=>({...a,home:a.home.key,workplace:a.workplace.key,goal:a.goal.key}))}));}
@@ -92,10 +95,10 @@
  time=saved.time;seed=saved.seed;nextDelivery=saved.nextDelivery;nextRent=saved.nextRent;nextPressure=saved.nextPressure;
  for(const key of Object.keys(events))events[key]=Number.isFinite(saved.events?.[key])?saved.events[key]:0;
  for(let i=0;i<agents.length;i++)Object.assign(agents[i],saved.agents[i],{home:byKey.get(saved.agents[i].home),workplace:byKey.get(saved.agents[i].workplace),goal:byKey.get(saved.agents[i].goal)});
- for(const a of agents){const blocked=!free(Math.floor(a.x/25),Math.floor(a.y/25));if(blocked){const cell=nearest(Math.floor(a.x/25),Math.floor(a.y/25));a.x=cell[0]*25+12;a.y=cell[1]*25+12;}if(a.state==='walk'&&(blocked||a.path.some(p=>!free(Math.floor(p.x/25),Math.floor(p.y/25)))))a.path=route(a,a.goal);}
+ for(const a of agents){const blocked=!free(Math.floor(a.x/25),Math.floor(a.y/25));if(blocked){const cell=nearest(Math.floor(a.x/25),Math.floor(a.y/25));a.x=cell[0]*25+12;a.y=cell[1]*25+12;}if(!a.mobilityVersion){const point=mobility.snap(a,a.reckless);a.x=point.x;a.y=point.y;if(a.state==='walk')a.path=mobility.route(a,a.goal,a.reckless);a.mobilityVersion=1;}else if(a.state==='walk'&&(blocked||a.path.some(p=>!free(Math.floor(p.x/25),Math.floor(p.y/25)))))a.path=mobility.route(a,a.goal,a.reckless);}
  for(let i=0;i<families.length;i++){Object.assign(families[i],saved.families[i]);families[i].home=agents[families[i].members[0]].home;}for(const[key,stock]of saved.stocks)stocks.set(key,stock);for(const[key,value]of saved.relationships)relationships.set(key,value);log.push(...saved.log.slice(0,30));
  }
- return{agents,families,stocks,relationships,places,events,log,tick,get time(){return time;},route,extent,snapshot,wildlife,services,get weather(){return weather();}};
+ return{agents,families,stocks,relationships,places,events,log,tick,get time(){return time;},route,extent,snapshot,wildlife,services,mobility,get weather(){return weather();}};
  }
  if(typeof module!=='undefined')module.exports={createSimulation};else root.createCitySimulation=createSimulation;
 })(typeof globalThis!=='undefined'?globalThis:this);
