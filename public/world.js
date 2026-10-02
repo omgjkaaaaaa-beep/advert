@@ -40,14 +40,24 @@
  {key:'fire',name:'Пожарное депо',x:53,y:45,w:6,h:5,kind:'work',story:'Красная машина, рукава на просушке и дежурная смена.'},
  {key:'allotment',name:'Дачи и огороды',x:20,y:53,w:10,h:6,kind:'park',story:'Капуста, сараи и вечная война за границу между грядками.'},
  {key:'residence5',name:'Дом у старого моста',x:33,y:53,w:5,h:6,kind:'residence',story:'Семьи собираются во дворе, дети выросли, а разговоры всё те же.'},
- {key:'depot',name:'Автобусный парк',x:40,y:53,w:10,h:6,kind:'work',story:'Водители готовят машины к рейсу. Механики обсуждают, кто опять потерял ключ на семнадцать.'},
+ {key:'depot',name:'Автобусный парк',x:40,y:53,w:4,h:6,kind:'work',story:'Водители готовят машины к рейсу. Механики обсуждают, кто опять потерял ключ на семнадцать.'},
+ {key:'depot-east',name:'Восточные боксы автопарка',x:45,y:53,w:5,h:6,kind:'work',story:'Отдельный ремонтный корпус: автобусы ждут осмотра, механики готовят инструменты.'},
  {key:'memorial',name:'Площадь старого памятника',x:53,y:53,w:6,h:6,kind:'park',story:'Цветы, облупленный постамент и большая площадь для встреч.'}
 
  ];
+
+ // Populate every street-bounded block without paving over its roads or landmarks.
+ const blocks=[];const spans=roads=>{const result=[];let start=0;for(const r of [...roads,size]){if(r>start)result.push([start,r-1]);start=r+1;}return result;};
+ const xs=spans([7,8,18,32,44,52]),ys=spans([4,12,28,36,44,52]);let buildingNo=0;
+ for(const [left,right] of xs)for(const [top,bottom] of ys){const block={left,right,top,bottom};blocks.push(block);
+ for(let y=top+1;y<=bottom-1;y+=5)for(let x=left+1;x<=right-1;x+=5){const w=Math.min(4,right-x),h=Math.min(3,bottom-y);if(w<2||h<2)continue;
+ if(landmarks.some(p=>x<p.x+p.w&&x+w>p.x&&y<p.y+p.h&&y+h>p.y))continue;
+ const n=++buildingNo;landmarks.push({key:'neighbourhood-house-'+n,name:(n%4===0?'Кирпичный дом':n%4===1?'Хрущёвка':n%4===2?'Дом с палисадником':'Старый жилой дом')+' № '+n,x,y,w,h,kind:'residence',generated:true,story:'Жилой двор: бельё на верёвке, скамейка у подъезда и соседи, которые знают друг друга годами.'});
+ }}
  function id(x,y){if(x<40&&y<40)return x<20&&y<20?y*20+x:y<20?400+y*20+x-20:800+(y-20)*40+x;return y<40?1600+y*20+x-40:2400+(y-40)*60+x;}
  function road(x,y){return [7,8,18,32,44,52].includes(x)||[4,12,28,36,44,52].includes(y);}
  function place(x,y){return landmarks.find(p=>x>=p.x&&x<p.x+p.w&&y>=p.y&&y<p.y+p.h);}
  const cells=[];for(let y=0;y<size;y++)for(let x=0;x<size;x++)cells.push({x,y,id:id(x,y),road:road(x,y),place:place(x,y)});
  const available=new Set(cells.filter(c=>!c.road&&!c.place).map(c=>c.id));
- const world={size,landmarks,cells,available};if(typeof module!=='undefined')module.exports=world;else root.CityWorld=world;
+ const world={size,landmarks,cells,available,blocks};if(typeof module!=='undefined')module.exports=world;else root.CityWorld=world;
 })(typeof globalThis!=='undefined'?globalThis:this);

@@ -32,7 +32,7 @@ const server = http.createServer(async (req, res) => {
  }); queue=task.catch(()=>{}); return await task;
  }
  if (!['GET','HEAD'].includes(req.method)) return send(405,{error:'Метод не поддерживается'});
- const file = {'/':'index.html','/app.js':'app.js','/style.css':'style.css','/world.js':'world.js','/scene.js':'scene.js','/simulation.js':'simulation.js','/life.js':'life.js'}[pathname];
+ const file = {'/':'index.html','/app.js':'app.js','/style.css':'style.css','/world.js':'world.js','/scene.js':'scene.js','/simulation.js':'simulation.js','/animals.js':'animals.js','/services.js':'services.js','/life.js':'life.js'}[pathname];
  if(!file) return send(404,{error:'Не найдено'});
  const content=await fs.readFile(path.join(root,file)); res.writeHead(200,{'Content-Type':file.endsWith('.html')?'text/html; charset=utf-8':file.endsWith('.css')?'text/css; charset=utf-8':'text/javascript; charset=utf-8'}); res.end(req.method==='HEAD'?undefined:content);
  } catch(e) { console.error(e); if(!res.headersSent) send(500,{error:'Не удалось сохранить данные. Попробуйте позже.'}); }

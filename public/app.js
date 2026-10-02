@@ -13,7 +13,7 @@ for(const c of world.cells){
  if(!c.road&&!c.place){el.dataset.cell=c.id;el.setAttribute('aria-label',`Свободный участок ${c.id+1}`);el.addEventListener('click',()=>openCell(c.id));}
  $('cells').append(el);
 }
-for(const p of world.landmarks){
+for(const p of world.landmarks.filter(p=>!p.generated)){
  const button=document.createElement('button');button.className='landmark-label';button.textContent=p.name;button.style.left=(28+p.x*100)+'px';button.style.top=(28+(p.y+p.h)*100-28)+'px';
  button.onclick=()=>{$('formView').hidden=true;$('adView').hidden=false;$('adAddress').textContent='ДОСТОПРИМЕЧАТЕЛЬНОСТЬ / СТАРЫЙ РАЙОН';$('adName').textContent=p.name;$('adText').textContent=p.story;$('adLink').hidden=true;$('dialog').showModal();};$('map').append(button);
  const jump=document.createElement('button');jump.textContent=p.name;jump.onclick=()=>{scale=viewport.clientWidth<600?.65:.85;x=viewport.clientWidth/2-(28+(p.x+p.w/2)*100)*scale;y=viewport.clientHeight/2-(28+(p.y+p.h/2)*100)*scale;apply();};$('locations').append(jump);
