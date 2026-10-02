@@ -59,10 +59,10 @@ viewport.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)retu
 viewport.addEventListener('pointerup',()=>{if(drag?.moved){suppress=true;setTimeout(()=>suppress=false,0);}drag=null;});viewport.addEventListener('pointercancel',()=>drag=null);
 viewport.addEventListener('click',e=>{if(suppress){e.preventDefault();e.stopPropagation();}},true);
 viewport.addEventListener('wheel',e=>{if(e.ctrlKey){e.preventDefault();zoom(e.deltaY>0?-.1:.1)}},{passive:false});
-$('choose').onclick=()=>{$('city').scrollIntoView({behavior:'smooth'});$('status').textContent='Наблюдайте за жителями, нажимайте на реплики и события хроники. Пунктирные участки можно занять.';};
+$('choose').onclick=()=>{document.querySelector('.map-shell').scrollIntoView({behavior:'smooth',block:'start'});$('status').textContent='Наблюдайте за жителями, нажимайте на реплики и события хроники. Пунктирные участки можно занять.';};
 $('how').onclick=()=>document.querySelector('.steps').scrollIntoView({behavior:'smooth'});
 window.addEventListener('resize',apply);reset();refresh();setInterval(()=>{if(!$('dialog').open)refresh();},15000);
 
-window.addEventListener('city-focus',e=>{scale=viewport.clientWidth<600?.65:.85;x=viewport.clientWidth/2-(28+e.detail.x*4)*scale;y=viewport.clientHeight/2-(28+e.detail.y*4)*scale;apply();$('city').scrollIntoView({behavior:'smooth'});});
+window.addEventListener('city-focus',e=>{scale=viewport.clientWidth<600?.65:.85;x=viewport.clientWidth/2-(28+e.detail.x*4)*scale;y=viewport.clientHeight/2-(28+e.detail.y*4)*scale;apply();document.querySelector('.map-shell').scrollIntoView({behavior:'smooth',block:'start'});});
 
 for(const button of document.querySelectorAll('[data-focus]'))button.onclick=()=>{const [x,y]=button.dataset.focus.split(',').map(Number);window.dispatchEvent(new CustomEvent('city-focus',{detail:{x,y}}));};
