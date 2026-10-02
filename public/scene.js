@@ -20,13 +20,18 @@
  if(p.key==='shop'){building(x+4,y+12,88,41,'#a68b6b');rect(x+9,y+17,77,9,'#8d3b2d');windows(x+12,y+31,4,1);rect(x+73,y+29,12,22,'#343d34');person(x+61,y+52,'#807859',true);rect(x+16,y+58,2,5,'#7f946a');rect(x+23,y+60,2,4,'#7f946a');}
  if(p.key==='factory'){building(x+4,y+56,110,79,'#94664e');windows(x+13,y+74,7,4);rect(x+10,y+22,95,32,'#715545');for(let i=0;i<12;i++)rect(x+12+i*8,y+27,5,15,'#3a4240');rect(x+78,y+4,13,62,'#795b48');rect(x+78,y+4,13,3,'#3c3f36');rust(x+78,y+4,13,62);rect(x+10,y+146,100,2,'#45463b');for(let i=0;i<20;i++)rect(x+10+i*5,y+140,1,16,'#45463b');}
  }
+
+ for(const p of CityWorld.landmarks){const x=p.x*25,y=p.y*25;
+ if(p.key==='market'){for(let i=0;i<4;i++){rect(x+5+i*29,y+18,24,24,'#68543e');for(let k=0;k<6;k++)rect(x+5+i*29+k*4,y+12,4,9,k%2?'#ad6147':'#d3ba83');for(let k=0;k<5;k++)rect(x+8+i*29+k*4,y+36,3,3,k%2?'#8c994e':'#c58445');}sign('РЫНОК',x+43,y+8);}
+ if(p.key==='kiosk'){building(x+16,y+6,43,31,'#78877c');rect(x+20,y+12,35,15,'#333f39');rect(x+20,y+28,35,3,'#b5a479');sign('ПЕЧАТЬ',x+21,y+11);}
+ if(p.key==='bus'){rect(x+10,y+14,84,28,'#b9a367');rect(x+13,y+17,75,10,'#405c59');for(let i=0;i<8;i++)rect(x+14+i*10,y+17,2,12,'#b9a367');rect(x+21,y+39,9,9,'#303a30');rect(x+75,y+39,9,9,'#303a30');rect(x+105,y+10,2,35,'#4e5848');rect(x+100,y+9,13,9,'#aab6a0');sign('7',x+104,y+16,'#3b4434');}
+ if(p.key==='park'){for(let i=0;i<6;i++)tree(x+8+i*17,y+8);rect(x+37,y+36,35,26,'#9f9a7b');rect(x+43,y+41,23,15,'#6a7565');rect(x+18,y+70,40,4,'#a08459');rect(x+79,y+60,22,20,'#b5a680');for(let i=0;i<4;i++)for(let j=0;j<4;j++)rect(x+81+i*4,y+62+j*4,4,4,(i+j)%2?'#403e31':'#c7b995');}
+ if(p.key==='cafe'){building(x+5,y+10,89,43,'#a68365');rect(x+9,y+14,79,10,'#983f31');sign('ПЕЛЬМЕНИ',x+25,y+21);windows(x+13,y+30,4,1);rect(x+71,y+30,12,23,'#4b5342');rect(x+15,y+61,16,7,'#988660');rect(x+58,y+61,16,7,'#988660');}
+ if(p.key==='clinic'){building(x+5,y+5,112,56,'#b1b49e');windows(x+13,y+21,8,2);rect(x+50,y+10,15,4,'#a1503c');rect(x+56,y+5,4,15,'#a1503c');rect(x+52,y+45,14,16,'#4b5a4e');}
+ if(p.key==='workshop'){building(x+7,y+10,111,45,'#8b8065');rect(x+14,y+25,45,28,'#3a4338');sign('ШИНОМОНТАЖ',x+15,y+21);for(let i=0;i<4;i++){rect(x+80,y+32+i*6,18,5,'#303a30');rect(x+84,y+33+i*6,10,2,'#687260');}}
+ if(p.key==='boiler'){building(x+8,y+10,104,28,'#85664c');rect(x+20,y+1,6,10,'#655948');rect(x+10,y+40,107,5,'#766b57');rect(x+10,y+42,107,1,'#b9a583');sign('ТЕПЛО',x+44,y+25);}
+ }
  for(const p of CityWorld.landmarks){if(p.key==='shop')sign('ГАСТРОНОМ',p.x*25+20,p.y*25+24);if(p.key==='factory')sign('КРАСНЫЙ ОКТЯБРЬ',p.x*25+12,p.y*25+68);}
  for(let i=0;i<100;i++){let x=Math.floor(rnd()*40),y=Math.floor(rnd()*40);const c=CityWorld.cells[y*40+x];if(!c.road&&!c.place)tree(x*25+15,y*25+4);}
- const live=document.getElementById('life'),a=live.getContext('2d');live.width=live.height=1000;
- const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
- let last=0;function animate(t){if(t-last>150){last=t;a.clearRect(0,0,1000,1000);const phase=reduced?0:t/1000;
- for(let i=0;i<9;i++){const x=470+i*33+Math.sin(phase*.3+i)*10,y=700+(i%3)*18;a.fillStyle='#343b33';a.fillRect(Math.round(x),Math.round(y),3,5);a.fillStyle='#b29673';a.fillRect(Math.round(x),Math.round(y)-2,2,2);a.fillStyle='#4e6748';a.fillRect(Math.round(x)+4,Math.round(y)+1,1,3);}
- for(let i=0;i<5;i++){a.fillStyle='#9c998480';a.fillRect(908-Math.round(phase*4+i*13)%40,496-i*5,10+i*2,4);}
- const light=Math.sin(phase*3)>-.4;a.fillStyle=light?'#d1b269':'#756547';a.fillRect(745,684,3,3);
- }if(!reduced)requestAnimationFrame(animate);}requestAnimationFrame(animate);
+
 })();

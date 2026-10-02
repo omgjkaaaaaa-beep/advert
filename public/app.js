@@ -20,6 +20,8 @@ for(const [key,value] of Object.entries(palette)){
  button.setAttribute('aria-pressed',key===color);button.onclick=()=>{color=key;[...$('colors').children].forEach(b=>b.setAttribute('aria-pressed',b===button))};$('colors').append(button);
 }
 function render(){
+ // Preserve existing ads if a later city expansion adds scenery to their cell.
+ for(const ad of ads){if(!document.querySelector('[data-cell="'+Number(ad.cell)+'"]')){const index=world.cells.findIndex(c=>c.id===ad.cell);if(index>=0){const el=document.createElement('button');el.dataset.cell=ad.cell;el.onclick=()=>openCell(ad.cell);$('cells').children[index].replaceWith(el);}}}
  for(const el of document.querySelectorAll('[data-cell]')){
  const ad=ads.find(a=>a.cell===Number(el.dataset.cell)); el.replaceChildren();el.className='cell'+(ad?' '+ad.color:'');
  el.setAttribute('aria-label',ad?`${ad.name}, занятый участок`:`Свободный участок ${Number(el.dataset.cell)+1}`);
