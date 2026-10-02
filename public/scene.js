@@ -1,8 +1,8 @@
 (function(){
- const canvas=document.getElementById('scenery'),ctx=canvas.getContext('2d');canvas.width=canvas.height=1000;ctx.imageSmoothingEnabled=false;
+ const canvas=document.getElementById('scenery'),ctx=canvas.getContext('2d');const extent=CityWorld.size*25;canvas.width=canvas.height=extent;canvas.style.width=canvas.style.height=CityWorld.size*100+'px';document.getElementById('life').style.width=document.getElementById('life').style.height=CityWorld.size*100+'px';ctx.imageSmoothingEnabled=false;
  const rect=(x,y,w,h,c)=>{ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),w,h);};
  let seed=19;const rnd=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296;};
- for(const c of CityWorld.cells){const x=c.x*25,y=c.y*25;rect(x,y,25,25,c.road?'#514d45':c.place?'#756c51':'#72745a');for(let n=0;n<12;n++)rect(x+rnd()*24,y+rnd()*24,1+rnd()*2,1,c.road?'#403f3b':rnd()>.5?'#8b8462':'#5e634b');if(c.road){if([4,12,28,36].includes(c.y))rect(x+7,y+12,9,1,'#b5a77c');else rect(x+12,y+7,1,9,'#b5a77c');if(rnd()>.7){rect(x+3,y+6,7,3,'#373d3c');rect(x+4,y+6,4,1,'#637575');}}}
+ for(const c of CityWorld.cells){const x=c.x*25,y=c.y*25;rect(x,y,25,25,c.road?'#514d45':c.place?'#756c51':'#72745a');for(let n=0;n<12;n++)rect(x+rnd()*24,y+rnd()*24,1+rnd()*2,1,c.road?'#403f3b':rnd()>.5?'#8b8462':'#5e634b');if(c.road){if([4,12,28,36,44,52].includes(c.y))rect(x+7,y+12,9,1,'#b5a77c');else rect(x+12,y+7,1,9,'#b5a77c');if(rnd()>.7){rect(x+3,y+6,7,3,'#373d3c');rect(x+4,y+6,4,1,'#637575');}}}
  function rust(x,y,w,h){for(let i=0;i<35;i++){const px=x+rnd()*w,py=y+rnd()*h;rect(px,py,2,1+rnd()*5,'#83543b');}}
  function building(x,y,w,h,color){rect(x+4,y+5,w,h,'#37382e');rect(x,y,w,h,color);rect(x,y,w,4,'#9b977b');rect(x,y+h-5,w,5,'#514e41');rust(x,y,w,h);}
  function windows(x,y,cols,rows){for(let a=0;a<cols;a++)for(let b=0;b<rows;b++){rect(x+a*13,y+b*12,6,7,'#343f3b');rect(x+a*13,y+b*12,6,1,'#9b9e82');if(rnd()>.65)rect(x+a*13+1,y+b*12+1,3,4,'#c6ac66');}}
@@ -31,7 +31,16 @@
  if(p.key==='workshop'){building(x+7,y+10,111,45,'#8b8065');rect(x+14,y+25,45,28,'#3a4338');sign('ШИНОМОНТАЖ',x+15,y+21);for(let i=0;i<4;i++){rect(x+80,y+32+i*6,18,5,'#303a30');rect(x+84,y+33+i*6,10,2,'#687260');}}
  if(p.key==='boiler'){building(x+8,y+10,104,28,'#85664c');rect(x+20,y+1,6,10,'#655948');rect(x+10,y+40,107,5,'#766b57');rect(x+10,y+42,107,1,'#b9a583');sign('ТЕПЛО',x+44,y+25);}
  }
+
+ for(const p of CityWorld.landmarks.filter(p=>p.kind)){const x=p.x*25,y=p.y*25,w=p.w*25,h=p.h*25;
+ if(p.kind==='residence'){building(x+5,y+9,w-12,h-25,'#96947d');windows(x+13,y+20,Math.floor((w-22)/13),Math.floor((h-45)/12));rect(x+w/2,y+h-28,12,17,'#3c493a');for(let i=0;i<5;i++){rect(x+15+i*13,y+1,1,8,'#3c4437');rect(x+11+i*13,y+3,9,1,'#3c4437');}}
+ else if(p.key==='stadium'){rect(x+9,y+10,w-18,h-25,'#586b45');rect(x+13,y+14,w-26,1,'#c9be8b');rect(x+13,y+h-20,w-26,1,'#c9be8b');rect(x+13,y+14,1,h-33,'#c9be8b');rect(x+w-14,y+14,1,h-33,'#c9be8b');rect(x+w/2,y+14,1,h-33,'#c9be8b');rect(x+7,y+h/2-12,9,25,'#c9be8b');rect(x+w-16,y+h/2-12,9,25,'#c9be8b');}
+ else if(['park','sport'].includes(p.kind)){for(let i=0;i<8;i++)tree(x+9+(i%4)*(w-15)/4,y+5+Math.floor(i/4)*(h-30)/2);rect(x+18,y+h-24,w-36,5,'#a28b61');if(p.key==='pond'){rect(x+25,y+27,w-50,h-61,'#627e75');rect(x+31,y+31,w-62,2,'#9da996');}if(p.key==='allotment'){for(let i=0;i<9;i++){rect(x+8+i*25,y+37,17,h-75,'#655a3d');for(let j=0;j<6;j++)rect(x+11+i*25,y+40+j*10,11,3,'#799451');}}if(p.key==='memorial'){rect(x+w/2-16,y+37,32,30,'#939680');rect(x+w/2-5,y+7,10,31,'#424f41');rect(x+w/2-4,y+3,8,7,'#424f41');}}
+ else if(p.kind==='trade'){building(x+6,y+12,w-12,h-32,'#a18763');rect(x+10,y+16,w-20,9,'#914d34');windows(x+14,y+32,Math.floor((w-22)/13),1);rect(x+w-26,y+32,12,h-52,'#3f4e3b');if(['fair','beer','bakery'].includes(p.key)){for(let i=0;i<Math.floor(w/8)-2;i++)rect(x+8+i*8,y+10,8,6,i%2?'#cbbb87':'#ac6746');}}
+ else{building(x+7,y+15,w-14,h-34,p.kind==='work'?'#8a6c51':'#a09678');windows(x+15,y+31,Math.floor((w-26)/13),Math.max(1,Math.floor((h-66)/12)));rect(x+12,y+20,w-24,8,'#725d43');if(p.key==='fire'){rect(x+15,y+h-33,35,11,'#ac4e36');rect(x+40,y+h-31,8,6,'#58716c');}if(p.key==='depot'){for(let i=0;i<4;i++){rect(x+15+i*52,y+h-40,43,15,'#ac9860');rect(x+18+i*52,y+h-38,35,6,'#485e57');}}if(p.key==='scrap'){for(let i=0;i<12;i++)rect(x+10+rnd()*(w-25),y+h-30+rnd()*12,15,3,'#8d5a3b');}}
+ sign(p.name.slice(0,24),x+12,y+11,'#d2be8a');
+ }
  for(const p of CityWorld.landmarks){if(p.key==='shop')sign('ГАСТРОНОМ',p.x*25+20,p.y*25+24);if(p.key==='factory')sign('КРАСНЫЙ ОКТЯБРЬ',p.x*25+12,p.y*25+68);}
- for(let i=0;i<100;i++){let x=Math.floor(rnd()*40),y=Math.floor(rnd()*40);const c=CityWorld.cells[y*40+x];if(!c.road&&!c.place)tree(x*25+15,y*25+4);}
+ for(let i=0;i<100;i++){let x=Math.floor(rnd()*CityWorld.size),y=Math.floor(rnd()*CityWorld.size);const c=CityWorld.cells[y*CityWorld.size+x];if(!c.road&&!c.place)tree(x*25+15,y*25+4);}
 
 })();
